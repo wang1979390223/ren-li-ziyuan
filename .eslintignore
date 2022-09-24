@@ -1,4 +1,4 @@
-build/*.js
+yabuild/*.js
 src/assets
 public
 dist
