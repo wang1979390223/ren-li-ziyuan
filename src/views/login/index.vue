@@ -2,7 +2,6 @@
   <div class="login-container">
     <el-form
       ref="loginForm"
-      class="login-form"
       auto-complete="on"
       label-position="left"
       :rules="rules"
@@ -10,7 +9,7 @@
     >
       <div class="title-container">
         <h3 class="title">
-          <img src="@/assets/common/login-logo.png" alt="">
+          <!-- <img src="@/assets/common/login-logo.png" alt=""> -->
         </h3>
       </div>
       <el-form-item prop="mobile">
@@ -92,6 +91,7 @@ export default {
         await this.$refs.loginForm.validate()
         this.loading = true
         await this.$store.dispatch('user/loginAction', this.loginForm)
+        this.$router.push('/dashboard')
       } finally {
         this.loading = false
       }
