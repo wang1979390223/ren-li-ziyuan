@@ -1,6 +1,6 @@
 module.exports = {
 
-  title: '人力资源',
+  title: '帝可得',
 
   /**
    * @type {boolean} true | false
