@@ -6,7 +6,7 @@ import settings from './modules/settings'
 import user from './modules/user'
 import createPersistedState from 'vuex-persistedstate'
 Vue.use(Vuex)
-
+// 数据持久化
 const store = new Vuex.Store({
   modules: {
     app,
@@ -15,7 +15,7 @@ const store = new Vuex.Store({
   },
   getters,
   plugins: [createPersistedState({
-    paths: ['user.token']
+    paths: ['user.token', 'user.hrsaastime']
   })]
 })
 
