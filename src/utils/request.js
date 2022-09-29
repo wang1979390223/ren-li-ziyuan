@@ -59,7 +59,7 @@ service.interceptors.response.use(response => {
     Message.error(error.message)
   }
   Message.error(error.message)
-  return Promise.reject(error)
+  return Promise.reject(new Error(error))
 }
 )
 // request interceptor
