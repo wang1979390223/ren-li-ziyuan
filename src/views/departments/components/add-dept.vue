@@ -11,28 +11,33 @@
         <el-input v-model="formData.code" style="width:80%" placeholder="1-50个字符" />
       </el-form-item>
       <el-form-item prop="manager" label="部门负责人">
-        <el-select v-model="formData.manager" style="width:80%" placeholder="请选择">
-          <el-option label="username11" value="username" />
+        <el-select v-model="formData.manager" style="width:80%" placeholder="请选择" @focus="getEmployeeSimple">
+          <el-option
+            v-for="item in peopels"
+            :key="item.id"
+            :label="item.username"
+            :value="item.username"
+          />
         </el-select>
       </el-form-item>
       <el-form-item prop="introduce" label="部门介绍">
-        <el-input style="width:80%" placeholder="1-300个字符" type="textarea" :rows="3" />
+        <el-input v-model="formData.introduce" style="width:80%" placeholder="1-300个字符" type="textarea" :rows="3" />
       </el-form-item>
     </el-form>
     <!-- el-dialog有专门放置底部操作栏的 插槽  具名插槽 -->
     <el-row slot="footer" type="flex" justify="center">
       <!-- 列被分为24 -->
       <el-col :span="6">
-        <el-button type="primary" size="small">确定</el-button>
-        <el-button size="small">取消</el-button>
+        <el-button v-loading="loading" type="primary" size="small" @click="submit">确定</el-button>
+        <el-button size="small" @click="handLeClose">取消</el-button>
       </el-col>
     </el-row>
   </el-dialog>
 </template>
 
 <script>
-import { getDepartments } from '@/api/departments'
-
+import { getDepartments, addDepartments } from '@/api/departments'
+import { getEmployeeSimple } from '@/api/employees'
 export default {
   name: 'HrsaasAdddept',
   props: {
@@ -51,7 +56,9 @@ export default {
     const checkCodeRepeat = async(rlue, value, callback) => {
       const { depts } = await getDepartments()
       // console.log(depts)
-      const isRepeat = depts.some('depts', depts)
+      // const isRepeat = depts.some('depts', depts)
+      const isRepeat = depts.some(ele => ele.code === value)
+
       isRepeat ? callback(new Error(`模块下已经存在${value}`)) : callback()
     }
     //     部门名称（name）：必填 1-50个字符 / 同级部门中禁止出现重复部门
@@ -74,7 +81,6 @@ export default {
         code: '', // 部门编码
         manager: '', // 部门管理者
         introduce: '' // 部门介绍
-
       },
       rules: { name: [
         { required: true, message: '部门名称必填', trigger: 'blur' },
@@ -93,7 +99,9 @@ export default {
         { required: true, message: '部门介绍必填', trigger: 'blur' },
         { min: 1, max: 300, message: '部门介绍1-300个字符', trigger: 'blur' }
       ]
-      }
+      },
+      peopels: [],
+      loading: false
     }
   },
   mounted() {
@@ -103,6 +111,30 @@ export default {
     handLeClose() {
       this.$emit('update:dialogVisible', false)
       this.$refs.addDeptForm.resetFields()
+      this.formData = {
+        name: '', // 部门名称
+        code: '', // 部门编码
+        manager: '', // 部门管理者
+        introduce: '' // 部门介绍
+      }
+    },
+    async getEmployeeSimple() {
+      // const res = await getEmployeeSimple()
+      this.peopels = await getEmployeeSimple()
+    },
+    async submit() {
+      try {
+        await this.$refs.addDeptForm.validate()
+        this.loading = true
+        await addDepartments({ ...this.formData, pid: this.treeNode.id })
+        this.$message.success('新增成功')
+        this.$parent.getDepartments()
+        this.handLeClose()
+      } catch (error) {
+        console.log(error)
+      } finally {
+        this.loading = false
+      }
     }
   }
 
