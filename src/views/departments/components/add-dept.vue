@@ -1,6 +1,6 @@
 <template>
   <!-- 新增部门的弹层 -->
-  <el-dialog title="新增部门" :visible="dialogVisible" @close="handLeClose">
+  <el-dialog :title="title" :visible="dialogVisible" @close="handLeClose">
     <!-- 表单组件  el-form   label-width设置label的宽度   -->
     <!-- 匿名插槽 -->
     <el-form ref="addDeptForm" :model="formData" :rules="rules" label-width="120px">
@@ -36,7 +36,7 @@
 </template>
 
 <script>
-import { getDepartments, addDepartments } from '@/api/departments'
+import { getDepartments, addDepartments, updateDepartments } from '@/api/departments'
 import { getEmployeeSimple } from '@/api/employees'
 export default {
   name: 'HrsaasAdddept',
@@ -55,21 +55,42 @@ export default {
   data() {
     const checkCodeRepeat = async(rlue, value, callback) => {
       const { depts } = await getDepartments()
+      let isRepeat = true
       // console.log(depts)
       // const isRepeat = depts.some('depts', depts)
-      const isRepeat = depts.some(ele => ele.code === value)
+      // const isRepeat = depts.some(ele => ele.code === value)
+
+      if (this.formData.id) {
+        // 判断名称是否重复
+        isRepeat = depts.some(ele => ele.id !== this.formData.id && ele.code === value)
+      } else {
+        //
+        isRepeat = depts.some(ele => ele.code === value)
+      }
 
       isRepeat ? callback(new Error(`模块下已经存在${value}`)) : callback()
+      // 编辑模式下，自己和自己校验
+      // 解决方案，对比的过程中把自己排除掉，然后再去对比
     }
     //     部门名称（name）：必填 1-50个字符 / 同级部门中禁止出现重复部门
     const nameCheck = async(rlue, value, callback) => {
       const { depts } = await getDepartments()
-      console.log(depts)
-      const deptstj = depts.filter(item => item.pid === this.treeNode.id)
-      // console.log(deptstj)
-      const isRepeat = deptstj.some(ele => ele.name === value)
+      // console.log(depts)
+      let isRepeat = true
+      if (this.formData.id) {
+        const deptstj1 = depts.filter(item => item.pid === this.treeNode.id &&
+         item.id !== this.treeNode.id)
+        // console.log(deptstj1)
+        isRepeat = deptstj1.some(ele => ele.name === value)
+      } else {
+        const deptstj = depts.filter(item => item.pid === this.treeNode.id)
+        // console.log(deptstj)
+        isRepeat = deptstj.some(ele => ele.name === value)
+      // 编辑模式下 存在的问题 ：
+      }
       isRepeat ? callback(new Error(`部门已经存在${value}`)) : callback()
     }
+    // 先拿到所有的同级部门数据，一个个的比较过去，如果出现重复，则校验不通过
     // 部门编码（code）：必填 1-50个字符 / 部门编码在整个模块中都不允许重复
 
     // 部门负责人（manager）：必填
@@ -104,12 +125,16 @@ export default {
       loading: false
     }
   },
+  computed: {
+    title() {
+      return this.formData.id ? '编辑模式' : '新增模式'
+    }
+  },
   mounted() {
 
   },
   methods: {
     handLeClose() {
-      this.$emit('update:dialogVisible', false)
       this.$refs.addDeptForm.resetFields()
       this.formData = {
         name: '', // 部门名称
@@ -117,6 +142,7 @@ export default {
         manager: '', // 部门管理者
         introduce: '' // 部门介绍
       }
+      this.$emit('update:dialogVisible', false)
     },
     async getEmployeeSimple() {
       // const res = await getEmployeeSimple()
@@ -125,9 +151,14 @@ export default {
     async submit() {
       try {
         await this.$refs.addDeptForm.validate()
+
         this.loading = true
-        await addDepartments({ ...this.formData, pid: this.treeNode.id })
-        this.$message.success('新增成功')
+        if (this.formData.id) {
+          await updateDepartments(this.formData)
+        } else {
+          await addDepartments({ ...this.formData, pid: this.treeNode.id })
+        }
+        this.$message.success(`${this.formData.id ? '编辑成功' : '新增成功'}`)
         this.$parent.getDepartments()
         this.handLeClose()
       } catch (error) {

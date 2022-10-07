@@ -1,5 +1,5 @@
 <template>
-  <div class="departments-container">
+  <div v-loading="loading" class="departments-container">
     <el-card>
       <treeTools :tree-node="company" :is-root="false" @AddDept="handLeClose" />
     </el-card>
@@ -10,9 +10,11 @@
         slot-scope="{data}"
         :tree-node="data"
         @AddDept="handLeClose"
+        @editDept="editDept"
+        @refreshList="getDepartments"
       />
     </el-tree>
-    <addDept :tree-node="currentNode" :dialog-visible.sync="dialogVisible" />
+    <addDept ref="addDept" :tree-node="currentNode" :dialog-visible.sync="dialogVisible" />
   </div>
 </template>
 
@@ -35,22 +37,35 @@ export default {
       },
       company: { name: '江苏传智播客教育科技股份有限公司', manager: '负责人' },
       dialogVisible: false,
-      currentNode: {}
+      currentNode: {},
+      loading: false
     }
   },
   created() {
     this.getDepartments()
   },
   methods: {
+
     async getDepartments() {
-      const { depts, companyManage, companyName } = await getDepartments()
-      console.log(depts)
-      this.departs = tranListToTreeData(depts, '')
-      this.company = { name: companyName, manager: companyManage, id: '' }
+      this.loading = true
+      try {
+        const { depts, companyManage, companyName } = await getDepartments()
+        console.log(depts)
+        this.departs = tranListToTreeData(depts, '')
+        this.company = { name: companyName, manager: companyManage, id: '' }
+        this.loading = false
+      } catch (error) {
+        console.log(error)
+      }
     },
     handLeClose(node) {
       this.dialogVisible = true
       this.currentNode = node
+    },
+    editDept(node) {
+      this.$refs.addDept.formData = { ...node }
+      this.currentNode = { ... node }
+      this.dialogVisible = true
     }
   }
 }
