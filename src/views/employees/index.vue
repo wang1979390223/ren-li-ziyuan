@@ -14,6 +14,18 @@
     <el-card>
       <el-table v-loading="loading" border :data="list">
         <el-table-column label="序号" sortable="" width="80" type="index" />
+        <el-table-column label="头像" align="center">
+          <template slot-scope="{row}">
+            <img
+              slot="reference"
+              v-imageerror="require('@/assets/common/bigUserHeader.png')"
+              :src="row.staffPhoto "
+              style="border-radius: 50%; width: 100px; height: 100px; padding: 10px"
+              alt=""
+              @click="genQrCode"
+            >
+          </template>
+        </el-table-column>
         <el-table-column label="姓名" prop="username" />
         <el-table-column label="工号" prop="workNumber" />
         <el-table-column label="聘用形式" prop="formOfEmployment" :formatter="formatterfn" />
@@ -53,6 +65,14 @@
       </el-row>
     </el-card>
     <addEmployee :dialog-visible.sync="dialogVisible" />
+    <el-dialog
+      title="提示"
+      :visible.sync="dialogVisibleQrCode"
+      width="30%"
+    >
+      <canvas ref="canvas" />
+    </el-dialog>
+
   </div>
 </template>
 
@@ -63,6 +83,7 @@ import EnumHireType from '@/api/constant/employees'
 import { getEmployeeList } from '@/api/employees'
 import addEmployee from './components/add-employee.vue'
 import { delEmployee } from '@/api/employees'
+import QrCode from 'qrcode'
 export default {
   components: { PageTools,
     addEmployee },
@@ -79,7 +100,8 @@ export default {
       loading: false,
       // 聘用形式
       hireType: EnumHireType.hireType,
-      dialogVisible: false
+      dialogVisible: false,
+      dialogVisibleQrCode: false
     }
   },
   mounted() {
@@ -90,7 +112,7 @@ export default {
       try {
         this.loading = true
         const { rows, total } = await getEmployeeList(this.page)
-        // console.log(res)
+        console.log(rows)
         this.list = rows
         this.total = total
       } catch (error) {
@@ -167,7 +189,18 @@ export default {
     },
     goDetail(row) {
       this.$router.push('/employees/detail/' + row.id)
-      console.log(1)
+      // console.log(1)
+    },
+    genQrCode(staffPhoto) {
+      if (!staffPhoto) return this.$message.error('暂无头像')
+
+      this.dialogVisibleQrCode = true
+      this.$nextTick(() => {
+        QrCode.toCanvas(this.$refs.canvas, 'sample text', function(error) {
+          if (error)console.error(error)
+          console.log('success')
+        })
+      })
     }
   }
 }

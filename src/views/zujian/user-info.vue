@@ -1,6 +1,7 @@
 <template>
   <div class="user-info">
     <!-- 个人信息 -->
+    <i class="el-icon-printer" @click="$router.push('/employees/print/'+userId +'?type=personal' )" />
     <el-form label-width="220px">
       <!-- 工号 入职时间 -->
       <el-row class="inline-info">
@@ -58,6 +59,7 @@
         <el-col :span="12">
           <el-form-item label="员工头像">
             <!-- 放置上传图片 -->
+            <Updateimg ref="employeesAvatar" :default-url="employeesAvatar" @on-success="UploadAvatarSuccess" />
           </el-form-item>
         </el-col>
       </el-row>
@@ -91,6 +93,7 @@
 
         <el-form-item label="员工照片">
           <!-- 放置上传图片 -->
+          <Updateimg ref="employeespic" :default-url="employeesPic" @on-success="updateSuccessPic" />
         </el-form-item>
         <el-form-item label="国家/地区">
           <el-select v-model="formData.nationalArea" class="inputW2">
@@ -390,9 +393,17 @@ import EmployeeEnum from '@/views/zujian/user-info.vue'
 import { getUserDetailById, updateUserDetailById } from '@/api/user.js'
 // import { getPersonalDetail, saveEmployeesInfo } from '@/api/employees'
 import { getPersonalDetail, saveEmployeesInfo } from '@/api/employees.js'
+import Updateimg from '@/components/Updateimg/index.vue'
+// import { Upload } from 'element-ui'
+
 export default {
+  components: {
+    Updateimg
+  },
   data() {
     return {
+      employeesPic: '',
+      employeesAvatar: '',
       userId: this.$route.params.id,
       EmployeeEnum, // 员工枚举数据
       userInfo: {},
@@ -465,17 +476,23 @@ export default {
   created() {
     this.getUserDetailById()
     this.getinfoEmploy()
-    this.saveEmployeesInfo()
-    this.saveuserInfo()
+    // this.saveEmployeesInfo()
+    // this.saveuserInfo()
   },
   methods: {
     async getUserDetailById() {
       const res = await getUserDetailById(this.userId)
       // console.log(res)
+      if (res.staffPhoto) {
+        this.employeesAvatar = res.staffPhoto
+      }
       this.userInfo = res
     },
     async getinfoEmploy() {
       const res = await getPersonalDetail(this.userId)
+      if (res.staffPhoto) {
+        this.employeesPic = res.staffPhoto
+      }
       this.formData = res
     },
     async  saveEmployeesInfo() {
@@ -489,11 +506,20 @@ export default {
     },
     async saveuserInfo() {
       try {
-        await updateUserDetailById()
+        if (this.$refs.employeesAvatar.loading) {
+          return this.$message.error('头像还在上传')
+        }
+        await updateUserDetailById(this.userInfo)
         this.$message.success('更新成功')
       } catch (error) {
         this.$message.error('更新失败')
       }
+    },
+    UploadAvatarSuccess(data) {
+      this.userInfo.staffPhoto = data.imgUrl
+    },
+    updateSuccessPic(data) {
+      this.formData.staffPhoto = data.imgUrl
     }
   }
 }
